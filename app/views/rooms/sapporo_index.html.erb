@@ -1,0 +1,12 @@
+<h1>札幌の施設一覧</h1>
+<p><%= @rooms.size %> 件が見つかりました。</p>
+<% @rooms.each do |room| %>
+  <div class="room-card">
+    <%= image_tag room.image.attached? ? room.image : 'room.png', class: 'room-image' %>
+    <h2><%= link_to room.name, room_path(room) %></h2>
+    <p>所在地：<%= room.area %></p>
+    <p>紹介文<%= room.description %></p>
+    <p>料金：¥<%= room.price %>~</p>
+    <%= link_to '詳細はこちら', room_path(room), class: 'details-button' %>
+  </div>
+<% end %>

@@ -1,0 +1,45 @@
+<!-- 件数表示 -->
+<p style="font-size: 18px; margin: 20px 0;">
+  <strong><%= @count %></strong> 件が見つかりました。
+</p>
+
+<!-- 施設カード一覧 -->
+<% if @rooms && @rooms.any? %>
+  <div class="room-list" style="display: flex; flex-wrap: wrap; gap: 24px;">
+    <% @rooms.each do |room| %>
+      <% Rails.logger.debug "[VIEW DEBUG] id=#{room.id}, name=#{room.name.inspect}, address=#{room.address.inspect}, description=#{room.description.inspect}" %>
+
+      <div class="room-card" style="width: 30%; background: #fdf8f3; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        
+        <!-- 画像 -->
+        <% if room.image.attached? %>
+          <%= image_tag url_for(room.image), style: 'width: 100%; height: 200px; object-fit: cover;' %>
+        <% else %>
+          <%= image_tag 'noimage.png', style: 'width: 100%; height: 200px; object-fit: cover;' %>
+        <% end %>
+
+        <!-- 内容 -->
+        <div style="padding: 16px;">
+          <h3 style="font-size: 20px; margin-bottom: 4px;"><%= room.name.presence || "（名前なし）" %></h3>
+          <p style="color: #777;"><%= room.address.presence || room.area.presence || "（住所未設定）" %></p>
+
+          <!-- ユーザー仮 -->
+          <p style="color: #f5a623; margin: 4px 0;">******</p>
+
+          <!-- 紹介文 -->
+          <p style="font-size: 14px; margin: 8px 0;"><%= truncate(room.description.presence || "（説明なし）", length: 80) %></p>
+
+          <!-- 金額 -->
+          <p style="color: #e74c3c; font-weight: bold; font-size: 20px; margin: 12px 0;">
+            <%= number_with_delimiter(room.price) %>円
+          </p>
+
+          <!-- 詳細リンク -->
+          <%= link_to '詳細はこちら', room_path(room), style: 'display: inline-block; padding: 8px 16px; background: #fff750; color: white; text-decoration: none; border-radius: 8px;' %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <p>該当する施設が見つかりませんでした。</p>
+<% end %>

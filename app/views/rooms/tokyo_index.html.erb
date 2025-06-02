@@ -1,0 +1,19 @@
+<h1>東京の施設一覧</h1>
+<p><%= @rooms.size %> 件が見つかりました。</p>
+
+<% @rooms.each do |room| %>
+  <div class="room-card">
+    <%= image_tag room.image.attached? ? room.image : 'room.png', class: 'room-image' %>
+    <h2><%= link_to room.name, room_path(room) %></h2>
+    <p><%= room.area %></p>
+    <p>⭐️⭐️⭐️⭐️⭐️</p>
+    <p><%= room.description %></p>
+    <p>¥<%= room.price %>~</p>
+    <%= link_to '詳細はこちら', room_path(room), class: 'details-button' %>
+  </div>
+
+
+
+
+<% end %>
+

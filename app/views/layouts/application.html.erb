@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Potepan Share</title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= stylesheet_link_tag 'application', media: 'all' %>
+    <%= javascript_pack_tag 'application' %>
+  </head>
+
+  <body>
+
+ <header>
+  <div class="header-content">
+    <%= link_to image_tag("logo.png", alt: "Potepan Share"), root_path, class: "logo" %>
+    
+
+  <% if user_signed_in? %>
+  <div class="user-info">
+
+    <a href="#" class="dropdown-toggle" id="dropdownMenuLink">
+      
+      
+      <%= image_tag(current_user.icon.attached? ? url_for(current_user.icon) : asset_path('default-icon.png'), class: 'user-icon') %>
+
+     <span class="user-name"><%= current_user.name %></span>
+    </a>
+
+   <div class="dropdown-menu" id="dropdownMenu">
+    <%= link_to '施設の新規登録', new_room_path, class: 'dropdown-item' %>
+    <%= link_to '予約済み一覧', reservations_path, class: 'dropdown-item' %>
+    <%= link_to '登録済み一覧', rooms_path, class: 'dropdown-item' %>
+    <%= link_to 'アカウント設定', account_user_path(current_user), class: 'dropdown-item' %>
+    <%= link_to 'ログアウト', destroy_user_session_path, method: :delete, class: 'dropdown-item' %>
+ </div>
+
+</div>
+
+
+ <% else %>
+  <div class="auth-links">
+    <%= link_to 'ログイン', new_user_session_path, class: 'btn btn-login' %>
+    <%= link_to '新規登録', new_user_registration_path, class: 'btn btn-signup' %>
+  </div>
+ <% end %>
+
+
+  </div>
+</header>
+
+<body>
+  <%= yield %>
+
+  <!-- JavaScriptをbody末尾で読み込み -->
+  <%= javascript_pack_tag 'application' %>
+</body>
+    
+
+</html>
+
+
+
+
