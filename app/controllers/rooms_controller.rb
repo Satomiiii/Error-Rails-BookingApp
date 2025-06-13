@@ -99,31 +99,67 @@ class RoomsController < ApplicationController
  
   
   def search
-    # binding.pry
+  
+    puts "===== ここまで来たよ ====="
 
-    area = params[:area].to_s.strip.gsub(/[\s　]/, '') # 半角・全角スペース除去
-    keyword = params[:keyword].to_s.strip.gsub(/[\s　]/, '')
+   # 正規化
+   @area = params[:area].to_s
+   puts "DEBUG1: raw area=#{@area.inspect} length=#{@area.length}"
 
-    query = []
-    values = []
+   @area = @area.strip.gsub(/[\u3000\s]+/, '')
+   puts "DEBUG2: normalized area=#{@area.inspect} length=#{@area.length}"
 
-    if area.present?
-     query << "(address LIKE ? OR area LIKE ?)"
-     values << "%#{area}%" << "%#{area}%"
-    end
+   @keyword = params[:keyword].to_s.strip.gsub(/[\u3000\s]+/, '')
+   puts "DEBUG3: normalized keyword=#{@keyword.inspect} length=#{@keyword.length}"
 
-    if keyword.present?
-      query << "(name LIKE ? OR description LIKE ?)"
-      values << "%#{keyword}%" << "%#{keyword}%"
-    end
+   @rooms = Room.all
 
-    Rails.logger.debug "[DEBUG SQL] #{query.join(' AND ')}"
-    Rails.logger.debug "[DEBUG VAL] #{values.inspect}"
+   # クエリ条件追加
+   conditions = []
+   values = []
 
-    @rooms = @rooms.where("address LIKE ?", "%#{@address}%")
-    @count = @rooms.count
+   if @area.present?
+     puts "===== DEBUG: 条件（エリア検索）を追加します ====="
+     conditions << "(address LIKE ? OR area LIKE ?)"
+     values += ["%#{@area}%", "%#{@area}%"]
+   end
 
-    render :search
+   if @keyword.present?
+     puts "===== DEBUG: 条件（キーワード検索）を追加します ====="
+     conditions << "(name LIKE ? OR description LIKE ?)"
+     values += ["%#{@keyword}%", "%#{@keyword}%"]
+   end
+
+   # 条件があれば追加
+  puts "===== conditions.any? == #{conditions.any?} ====="
+
+   if conditions.any?
+     query = conditions.join(" AND ")
+     @rooms = @rooms.where(query, *values)
+
+     # この位置でSQL確認
+     puts "===== 最終SQL文 (inside where) ====="
+     puts @rooms.to_sql
+   end
+
+   # 最終SQL文確認（全体でも確認）
+   puts "===== 最終SQL文 (outside where) ====="
+   puts @rooms.to_sql
+
+   # 件数確認
+   puts "===== 件数 ====="
+   puts @rooms.count
+
+   # 結果の中身確認
+   puts "===== DEBUG: 結果の中身 ====="
+  @rooms.each do |room|
+    puts "#{room.name} / #{room.area} / #{room.address}"
+  end
+
+   @count = @rooms.count
+   render :search
+
+  
   end
 
 
@@ -137,3 +173,4 @@ end
 
 
 
+ｓ
