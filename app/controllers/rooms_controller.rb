@@ -100,65 +100,61 @@ class RoomsController < ApplicationController
   
   def search
   
-    puts "===== ここまで来たよ ====="
+    puts "===== 🚩 ここまで来たよ ====="
 
-   # 正規化
-   @area = params[:area].to_s
-   puts "DEBUG1: raw area=#{@area.inspect} length=#{@area.length}"
+    # パラメータ取得と正規化（不可視文字削除）
+    @area = params[:area].to_s
+    puts "DEBUG1: raw area=#{@area.inspect} length=#{@area.length}"
 
-   @area = @area.strip.gsub(/[\u3000\s]+/, '')
-   puts "DEBUG2: normalized area=#{@area.inspect} length=#{@area.length}"
+    @area = @area.strip.gsub(/[[:space:]]|\u3000/, '')
+    puts "DEBUG2: normalized area=#{@area.inspect} length=#{@area.length}"
 
-   @keyword = params[:keyword].to_s.strip.gsub(/[\u3000\s]+/, '')
-   puts "DEBUG3: normalized keyword=#{@keyword.inspect} length=#{@keyword.length}"
+    @keyword = params[:keyword].to_s.strip.gsub(/[[:space:]]|\u3000/, '')
+    puts "DEBUG3: normalized keyword=#{@keyword.inspect} length=#{@keyword.length}"
 
-   @rooms = Room.all
+    # 初期値
+    @rooms = Room.all
+    conditions = []
+    values = []
 
-   # クエリ条件追加
-   conditions = []
-   values = []
+    # エリア検索条件
+    if @area.present?
+      puts "===== DEBUG: 条件（エリア検索）を追加します ====="
+      conditions << "(address LIKE ? OR area LIKE ?)"
+      values << "%#{@area}%" << "%#{@area}%"
+    end
 
-   if @area.present?
-     puts "===== DEBUG: 条件（エリア検索）を追加します ====="
-     conditions << "(address LIKE ? OR area LIKE ?)"
-     values += ["%#{@area}%", "%#{@area}%"]
-   end
+    # キーワード検索条件
+    if @keyword.present?
+      puts "===== DEBUG: 条件（キーワード検索）を追加します ====="
+      conditions << "(name LIKE ? OR description LIKE ?)"
+      values << "%#{@keyword}%" << "%#{@keyword}%"
+    end
 
-   if @keyword.present?
-     puts "===== DEBUG: 条件（キーワード検索）を追加します ====="
-     conditions << "(name LIKE ? OR description LIKE ?)"
-     values += ["%#{@keyword}%", "%#{@keyword}%"]
-   end
+    # 条件適用
+    puts "===== DEBUG conditions=#{conditions.inspect} ====="
+    puts "===== DEBUG values=#{values.inspect} ====="
+    puts "===== conditions.any? = #{conditions.any?} ====="
 
-   # 条件があれば追加
-  puts "===== conditions.any? == #{conditions.any?} ====="
+    if conditions.any?
+      query = conditions.join(" AND ")
+      puts "===== DEBUG: query=#{query.inspect} ====="
+      puts "===== DEBUG: 最終SQL ====="
+      puts ActiveRecord::Base.send(:sanitize_sql_array, [query, *values])
+      @rooms = @rooms.where(query, *values)
+    end
 
-   if conditions.any?
-     query = conditions.join(" AND ")
-     @rooms = @rooms.where(query, *values)
+    # 件数と中身確認
+    puts "===== 件数 ====="
+    puts @rooms.count
 
-     # この位置でSQL確認
-     puts "===== 最終SQL文 (inside where) ====="
-     puts @rooms.to_sql
-   end
+    puts "===== 結果の中身 ====="
+    @rooms.each do |room|
+      puts "#{room.name} / #{room.area} / #{room.address}"
+    end
 
-   # 最終SQL文確認（全体でも確認）
-   puts "===== 最終SQL文 (outside where) ====="
-   puts @rooms.to_sql
-
-   # 件数確認
-   puts "===== 件数 ====="
-   puts @rooms.count
-
-   # 結果の中身確認
-   puts "===== DEBUG: 結果の中身 ====="
-  @rooms.each do |room|
-    puts "#{room.name} / #{room.area} / #{room.address}"
-  end
-
-   @count = @rooms.count
-   render :search
-
+    @count = @rooms.count
+    render :search
   
   end
 
@@ -168,9 +164,3 @@ end
 
 
 
-
-
-
-
-
-ｓ
