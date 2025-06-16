@@ -6,6 +6,12 @@
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
 
+# 既存データを削除
+User.destroy_all
+Room.destroy_all
+
+puts "===== ユーザーと施設データを初期化しました ====="
+
 # ユーザー作成
 user = User.create!(
   name: 'テスト太郎',
@@ -14,31 +20,35 @@ user = User.create!(
   password_confirmation: 'password'
 )
 
-# Room 作成（エリアや住所付きで）
-Room.create!(
-  name: '東京のホテル',
-  area: '東京',
-  description: 'テスト用のホテルです',
-  price: 10000,
-  address: '東京都',
-  user: user
-)
+puts "✅ ユーザーを作成しました（#{user.name}）"
 
-Room.create!(
-  name: '大阪の旅館',
-  area: '大阪',
-  description: '大阪の宿です',
-  price: 8000,
-  address: '大阪府',
-  user: user
-)
+# Room 作成
+rooms = [
+  {
+    name: '東京のホテル',
+    area: '東京',
+    address: '東京都',
+    description: 'テスト用のホテルです',
+    price: 10000
+  },
+  {
+    name: '大阪の旅館',
+    area: '大阪',
+    address: '大阪府',
+    description: '大阪の宿です',
+    price: 8000
+  },
+  {
+    name: 'テスト用のホテル',
+    area: '東京',
+    address: '東京都',
+    description: 'テストデータです',
+    price: 10000
+  }
+]
 
+rooms.each do |room_data|
+  Room.create!(room_data.merge(user: user))
+end
 
-Room.create!(
-  name: "テスト用のホテル",
-  area: "東京",
-  address: "東京都",
-  description: "テストデータです",
-  price: 10000,
-  user_id: 1
-)
+puts "✅ Roomデータを #{rooms.count} 件作成しました！"
