@@ -1,4 +1,6 @@
 class RoomsController < ApplicationController
+  require 'nkf'  # 文字コード正規化用
+  
   before_action :set_room, only: [:show, :edit, :update, :destroy]
   
 
@@ -96,70 +98,44 @@ class RoomsController < ApplicationController
 
   # end
    
- 
   
-  def search
   
-    puts "===== 🚩 ここまで来たよ ====="
-
-    # パラメータ取得と正規化（不可視文字削除）
-    @area = params[:area].to_s
-    puts "DEBUG1: raw area=#{@area.inspect} length=#{@area.length}"
-
-    @area = @area.strip.gsub(/[[:space:]]|\u3000/, '')
-    puts "DEBUG2: normalized area=#{@area.inspect} length=#{@area.length}"
-
-    @keyword = params[:keyword].to_s.strip.gsub(/[[:space:]]|\u3000/, '')
-    puts "DEBUG3: normalized keyword=#{@keyword.inspect} length=#{@keyword.length}"
-
-    # 初期値
-    @rooms = Room.all
-    conditions = []
-    values = []
-
-    # エリア検索条件
-    if @area.present?
-      puts "===== DEBUG: 条件（エリア検索）を追加します ====="
-      conditions << "(address LIKE ? OR area LIKE ?)"
-      values << "%#{@area}%" << "%#{@area}%"
-    end
-
-    # キーワード検索条件
-    if @keyword.present?
-      puts "===== DEBUG: 条件（キーワード検索）を追加します ====="
-      conditions << "(name LIKE ? OR description LIKE ?)"
-      values << "%#{@keyword}%" << "%#{@keyword}%"
-    end
-
-    # 条件適用
-    puts "===== DEBUG conditions=#{conditions.inspect} ====="
-    puts "===== DEBUG values=#{values.inspect} ====="
-    puts "===== conditions.any? = #{conditions.any?} ====="
-
-    if conditions.any?
-      query = conditions.join(" AND ")
-      puts "===== DEBUG: query=#{query.inspect} ====="
-      puts "===== DEBUG: 最終SQL ====="
-      puts ActiveRecord::Base.send(:sanitize_sql_array, [query, *values])
-      @rooms = @rooms.where(query, *values)
-    end
-
-    # 件数と中身確認
-    puts "===== 件数 ====="
-    puts @rooms.count
-
-    puts "===== 結果の中身 ====="
-    @rooms.each do |room|
-      puts "#{room.name} / #{room.area} / #{room.address}"
-    end
-
-    @count = @rooms.count
-    render :search
   
+  
+  
+ def search
+
+   area = params[:area].to_s.strip.gsub(/[\s　]/, '') # 半角・全角スペース除去
+  keyword = params[:keyword].to_s.strip.gsub(/[\s　]/, '')
+
+   query = []
+   values = []
+
+  if area.present?
+    query << "(address LIKE ? OR area LIKE ?)"
+    values << "%#{area}%" << "%#{area}%"
   end
+
+  if keyword.present?
+    query << "(name LIKE ? OR description LIKE ?)"
+    values << "%#{keyword}%" << "%#{keyword}%"
+  end
+
+  Rails.logger.debug "[DEBUG SQL] #{query.join(' AND ')}"
+  Rails.logger.debug "[DEBUG VAL] #{values.inspect}"
+  Rails.logger.debug(Room.where(query.join(" AND ", *values).to_sql))
+
+  @rooms = query.empty? ? Room.none : Room.where(query.join(' AND '), *values)
+  @count = @rooms.count
+
+  render :search
+ 
+ end
+
 
 
 end
+
 
 
 

@@ -67,3 +67,4 @@ gem 'jquery-rails' # JavaScript用
 
 gem 'concurrent-ruby', '1.3.4'
 
+gem 'nkf'
