@@ -3,6 +3,16 @@
   <strong><%= @count %></strong> 件が見つかりました。
 </p>
 
+<!-- デバッグ表示 -->
+<% if @rooms.blank? %>
+  <p>@rooms は nil または空です</p>
+<% else %>
+  <p>@rooms の件数: <%= @rooms.size %></p>
+  <pre><%= @rooms.inspect %></pre>
+<% end %>
+
+
+
 <!-- 施設カード一覧 -->
 <% if @rooms && @rooms.any? %>
   <div class="room-list" style="display: flex; flex-wrap: wrap; gap: 24px;">

@@ -76,6 +76,7 @@ class RoomsController < ApplicationController
 
   def show
     @reservation = Reservation.new
+    puts "DEBUG: @rooms => #{@rooms.inspect}"
   end
 
   private
@@ -105,28 +106,45 @@ class RoomsController < ApplicationController
   
  def search
 
-   area = params[:area].to_s.strip.gsub(/[\s　]/, '') # 半角・全角スペース除去
-  keyword = params[:keyword].to_s.strip.gsub(/[\s　]/, '')
+   @rooms = Room.none        # ← まず空Relationで初期化（nil回避）
 
-   query = []
-   values = []
+  area    = params[:area].to_s.strip
+  keyword = params[:keyword].to_s.strip
+
+  query  = []
+  values = []
 
   if area.present?
-    query << "(address LIKE ? OR area LIKE ?)"
+    query  << "(address LIKE ? OR area LIKE ?)"
     values << "%#{area}%" << "%#{area}%"
   end
 
   if keyword.present?
-    query << "(name LIKE ? OR description LIKE ?)"
+    query  << "(name LIKE ? OR description LIKE ?)"
     values << "%#{keyword}%" << "%#{keyword}%"
   end
 
-  Rails.logger.debug "[DEBUG SQL] #{query.join(' AND ')}"
-  Rails.logger.debug "[DEBUG VAL] #{values.inspect}"
-  Rails.logger.debug(Room.where(query.join(" AND ", *values).to_sql))
+  @rooms = Room.where(query.join(' AND '), *values) unless query.empty?
+  @count = @rooms.size
 
-  @rooms = query.empty? ? Room.none : Room.where(query.join(' AND '), *values)
-  @count = @rooms.count
+  Rails.logger.debug "PARAMS area=#{area} keyword=#{keyword}"
+  Rails.logger.debug "[DEBUG SQL] #{Room.where(query.join(' AND '), *values).to_sql}" unless query.empty?
+  Rails.logger.debug "DEBUG: @rooms => #{@rooms.inspect}"
+
+  puts "PARAMS: #{params.inspect}"
+  puts "SQL: #{Room.where(query.join(' AND '), *values).to_sql}" unless query.empty?
+  puts "RESULT: #{@rooms.inspect}"
+
+
+ if @rooms.blank?
+  Rails.logger.debug "DEBUG: @rooms is EMPTY or NIL"
+ else
+  Rails.logger.debug "DEBUG: @rooms has #{@rooms.size} records"
+  Rails.logger.debug "DEBUG: @rooms => #{@rooms.inspect}"
+ end
+
+
+
 
   render :search
  
