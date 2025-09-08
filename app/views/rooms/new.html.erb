@@ -1,24 +1,22 @@
-<h2>新規登録</h2>
-
 <%= form_with model: @room, local: true do |f| %>
   <div>
     <%= f.label :name, '施設名' %>
-    <%= f.text_field :name, required: true %>
+    <%= f.text_field :name %>
   </div>
 
   <div>
     <%= f.label :description, '施設詳細' %>
-    <%= f.text_area :description, required: true %>
+    <%= f.text_area :description %>
   </div>
 
   <div>
     <%= f.label :price, '料金' %>
-    <%= f.number_field :price, required: true, min: 1 %>
+    <%= f.number_field :price %>
   </div>
 
   <div>
     <%= f.label :address, '住所' %>
-    <%= f.text_field :address, required: true %>
+    <%= f.text_field :address %>
   </div>
 
   <div>
@@ -26,5 +24,5 @@
     <%= f.file_field :image %>
   </div>
 
-  <%= f.submit '保存', class: 'btn btn-primary' %>
+  <%= f.submit '保存' %>
 <% end %>

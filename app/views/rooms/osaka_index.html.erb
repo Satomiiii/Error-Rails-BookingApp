@@ -3,12 +3,14 @@
 
 <% @rooms.each do |room| %>
   <div class="room-card">
-    <%= image_tag room.image.attached? ? room.image : 'room.png', class: 'room-image' %>
+    <%= image_tag(room.image.attached? ? room.image : 'room.png', class: 'room-image') %>
+
     <h2><%= link_to room.name, room_path(room) %></h2>
-    <p><%= room.area %></p>
-    <p>⭐️⭐️⭐️⭐️⭐️</p>
-    <p><%= room.description %></p>
-    <p>¥<%= room.price %>~</p>
+
+    <p>所在地：<%= room.address %></p>
+    <p>紹介文：<%= truncate(room.description, length: 80) %></p>
+    <p>料金：¥<%= number_with_delimiter(room.price) %>〜</p>
+
     <%= link_to '詳細はこちら', room_path(room), class: 'details-button' %>
   </div>
 <% end %>

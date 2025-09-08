@@ -1,52 +1,44 @@
-<!-- 件数表示 -->
-<p style="font-size: 18px; margin: 20px 0;">
+<p style="font-size:18px; margin:20px 0;">
   <strong><%= @count %></strong> 件が見つかりました。
 </p>
 
-<!-- デバッグ表示 -->
-<% if @rooms.blank? %>
-  <p>@rooms は nil または空です</p>
-<% else %>
-  <p>@rooms の件数: <%= @rooms.size %></p>
-  <pre><%= @rooms.inspect %></pre>
-<% end %>
-
-
-
-<!-- 施設カード一覧 -->
-<% if @rooms && @rooms.any? %>
-  <div class="room-list" style="display: flex; flex-wrap: wrap; gap: 24px;">
+<% if @count > 0 %>
+  <div class="room-list" style="display:flex; flex-wrap:wrap; gap:24px;">
     <% @rooms.each do |room| %>
-      <% Rails.logger.debug "[VIEW DEBUG] id=#{room.id}, name=#{room.name.inspect}, address=#{room.address.inspect}, description=#{room.description.inspect}" %>
-
-      <div class="room-card" style="width: 30%; background: #fdf8f3; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <div class="room-card" style="width:360px; background:#fdf8f3; border-radius:16px; overflow:hidden; box-shadow:2px 8px 20px rgba(0,0,0,.1);">
         
         <!-- 画像 -->
         <% if room.image.attached? %>
-          <%= image_tag url_for(room.image), style: 'width: 100%; height: 200px; object-fit: cover;' %>
+          <%= image_tag room.image.variant(resize_to_fill: [360, 220]).processed, style: 'width:100%; height:220px; object-fit:cover;' %>
         <% else %>
-          <%= image_tag 'noimage.png', style: 'width: 100%; height: 200px; object-fit: cover;' %>
+          <%= image_tag 'room.png', style: 'width:100%; height:220px; object-fit:cover;' %>
         <% end %>
 
-        <!-- 内容 -->
-        <div style="padding: 16px;">
-          <h3 style="font-size: 20px; margin-bottom: 4px;"><%= room.name.presence || "（名前なし）" %></h3>
-         <p style="color: #777;"><%= room.address.presence || "（住所未設定）" %></p>
+        <div style="padding:16px;">
+          <!-- ホテル名 -->
+          <h3 style="font-size:20px; margin:0 0 8px;">
+            <%= room.name.presence || '名称未設定' %>
+          </h3>
 
-
-          <!-- ユーザー仮 -->
-          <p style="color: #f5a623; margin: 4px 0;">******</p>
-
-          <!-- 紹介文 -->
-          <p style="font-size: 14px; margin: 8px 0;"><%= truncate(room.description.presence || "（説明なし）", length: 80) %></p>
-
-          <!-- 金額 -->
-          <p style="color: #e74c3c; font-weight: bold; font-size: 20px; margin: 12px 0;">
-            <%= number_with_delimiter(room.price) %>円
+          <!-- 住所 -->
+          <p style="color:#777; margin:0 0 12px;">
+            <%= room.address.presence || '住所未設定' %>
           </p>
 
-          <!-- 詳細リンク -->
-          <%= link_to '詳細はこちら', room_path(room), style: 'display: inline-block; padding: 8px 16px; background: #fff750; color: white; text-decoration: none; border-radius: 8px;' %>
+          <!-- 説明文の一部 -->
+          <p style="font-size:14px; line-height:1.7; margin:0 0 12px;">
+            <%= truncate(room.description.to_s, length: 80) %>
+          </p>
+
+          <!-- 値段 -->
+          <p style="color:#e35c1a; font-weight:bold; font-size:20px; margin:0 0 12px;">
+            <%= number_to_currency(room.price, unit: '¥', precision: 0) %>〜
+          </p>
+
+          <!-- 詳細ページ -->
+          <%= link_to '詳細はこちら', room_path(room),
+              class: 'room-detail-btn',
+              style: 'display:inline-block; padding:10px 16px; background:#ff7750; color:#111; text-decoration:none; border-radius:8px;' %>
         </div>
       </div>
     <% end %>

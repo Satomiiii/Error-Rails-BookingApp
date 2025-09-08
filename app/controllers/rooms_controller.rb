@@ -1,67 +1,32 @@
+# app/controllers/rooms_controller.rb
 class RoomsController < ApplicationController
-  require 'nkf'  # 文字コード正規化用
-  
+  require 'nkf' # 文字コード正規化用
+
   before_action :set_room, only: [:show, :edit, :update, :destroy]
-  
 
-  def tokyo_index
-  # 東京エリアの施設一覧を取得、デフォルトでプリンスホテルを含める
-    @rooms = Room.where(area: '東京')
-    if @rooms.empty?
-      @rooms = [Room.create!(
-        name: 'プリンスホテル',
-        area: '東京',
-        address: '東京都港区',
-        description: '添い寝用のお布団やおまる、ベビーチェア、お子様ハンガー、コンセントキャップ、離乳食などを備えた赤ちゃん専用ルームです。ご家族でゆっくりお過ごしください。',
-        price: 18000
-      )]
-    end
+  # ===== CRUD =====
+
+  def index
+    # 管理者ページなどで使う想定。ログインしていれば自分の施設を、していなければ全件。
+    @rooms = current_user ? current_user.rooms : Room.all
   end
 
-
-
-  def osaka_index
-    @rooms = Room.where(area: '大阪')
-    #puts "大阪の施設一覧: #{@rooms.inspect}" # デバッグ用出力
-    if @rooms.empty?
-      @rooms = [Room.create!(
-        name: 'ホテルニューガイア',
-        area: '大阪',
-        description: '添い寝用のお布団やおまる、ベビーチェア、お子様ハンガー、コンセントキャップ、離乳食などを備えた赤ちゃん専用ルームです。ご家族でゆっくりお過ごしください。',
-        price: 18000
-      )]
-      #puts "デフォルト施設を作成しました: #{@rooms.inspect}" # デバッグ用出力
-    end
+  def show
+    @reservation = Reservation.new
   end
-    
-
-  def kyoto_index
-    @rooms = Room.where(area: '京都')
-    if @rooms.empty?
-      @rooms = [Room.create(name: '湯快リゾート', area: '京都府', description: '添い寝用のお布団やおまる、ベビーチェア、お子様ハンガー、コンセントキャップ、離乳食などを備えた赤ちゃん専用ルームです。ご家族でゆっくりお過ごしください。', price: 18000)]
-    end
-  end
-  
-  def sapporo_index
-    @rooms = Room.where(area: '札幌')
-    if @rooms.empty?
-      @rooms = [Room.create(name: '東急ステイ', area: '札幌', description: '添い寝用のお布団やおまる、ベビーチェア、お子様ハンガー、コンセントキャップ、離乳食などを備えた赤ちゃん専用ルームです。ご家族でゆっくりお過ごしください。', price: 18000)]
-    end
-  end
-  
-  
-
-
-
 
   def new
-     @room = Room.new
-     @reservation = Reservation.new
+    @room = Room.new
+    @reservation = Reservation.new
   end
 
   def create
-    @room = current_user.rooms.build(room_params)
-    #@room = Room.new(room_params)
+    # ログインしていない場合でもシード用ユーザーに紐付けて保存できるようにしておく
+    owner = current_user || User.first || User.create!(email: "seed@example.com",
+                                                      password: "password123",
+                                                      name: "Seed User")
+    @room = owner.rooms.build(room_params)
+
     if @room.save
       redirect_to rooms_path, notice: '施設が登録されました。'
     else
@@ -69,17 +34,102 @@ class RoomsController < ApplicationController
     end
   end
 
-  def index
-    #@rooms = Room.all
-    @rooms = current_user.rooms
+  def edit; end
+
+  def update
+    if @room.update(room_params)
+      redirect_to room_path(@room), notice: '施設情報を更新しました。'
+    else
+      render :edit
+    end
   end
 
-  def show
-    @reservation = Reservation.new
-    puts "DEBUG: @rooms => #{@rooms.inspect}"
+  def destroy
+    @room.destroy
+    redirect_to rooms_path, notice: '施設を削除しました。'
+  end
+
+  # ===== 検索 =====
+  def search
+    area    = params[:area].to_s.strip
+    keyword = params[:keyword].to_s.strip
+
+    scope = Room.all
+    scope = scope.where("address LIKE ?", "%#{area}%") if area.present?
+    scope = scope.where("name LIKE :kw OR description LIKE :kw", kw: "%#{keyword}%") if keyword.present?
+
+    # 画像 N+1 対策
+    @rooms = scope.order(created_at: :desc).includes(image_attachment: :blob).load
+    @count = @rooms.size
+
+    render :search
+  end
+
+  # ===== エリア別インデックス =====
+  def tokyo_index
+    seed_if_empty('東京', {
+      name: 'プリンスホテル',
+      address: '東京都港区',
+      description: '添い寝用のお布団やおむろ、ベビーチェア、お子様ハンガー、コンセントキャップ、離乳食などを備えた赤ちゃん専用ルームです。ご家族でゆっくりお過ごしください。',
+      price: 18000
+    })
+    @rooms = Room.where("address LIKE ?", "%東京%")
+                 .order(created_at: :desc)
+                 .includes(image_attachment: :blob)
+  end
+
+  def osaka_index
+    seed_if_empty('大阪', {
+      name: 'ホテルニューオータニ',
+      address: '大阪府',
+      description: '（大阪の説明）',
+      price: 18000
+    })
+    @rooms = Room.where("address LIKE ?", "%大阪%")
+                 .order(created_at: :desc)
+                 .includes(image_attachment: :blob)
+  end
+
+  def kyoto_index
+    seed_if_empty('京都', {
+      name: '湯けむりリゾート',
+      address: '京都府',
+      description: '（京都の説明）',
+      price: 18000
+    })
+    @rooms = Room.where("address LIKE ?", "%京都%")
+                 .order(created_at: :desc)
+                 .includes(image_attachment: :blob)
+  end
+
+  def sapporo_index
+    seed_if_empty('札幌', {
+      name: '東急ステイ',
+      address: '札幌市',
+      description: '良いホテル',
+      price: 18000
+    })
+    @rooms = Room.where("address LIKE ?", "%札幌%")
+                 .order(created_at: :desc)
+                 .includes(image_attachment: :blob)
   end
 
   private
+
+  # 指定エリアに1件も無ければデフォルトを作成（オーナーはログインユーザー or シードユーザー）
+  def seed_if_empty(area_keyword, default_attrs)
+    exists = Room.where("address LIKE ?", "%#{area_keyword}%").exists?
+    return if exists
+
+    owner = current_user || User.first || User.create!(email: "seed@example.com",
+                                                       password: "password123",
+                                                       name: "Seed User")
+    Room.create!(default_attrs.merge(user: owner))
+  end
+
+  def room_params
+    params.require(:room).permit(:name, :description, :price, :address, :image, :area)
+  end
 
   def set_room
     @room = Room.find_by(id: params[:id])
@@ -87,74 +137,4 @@ class RoomsController < ApplicationController
       redirect_to rooms_path, alert: '施設が見つかりませんでした。'
     end
   end
-
-  def room_params
-    params.require(:room).permit(:name, :description, :price, :address, :image)
-  end
-
-  # def search
-    # puts "params: #{params.inspect}"
-    # render plain: "area: #{params[:area]}, keyword: #{params[:keyword]}"
-    # puts params.inspect
-
-  # end
-   
-  
-  
-  
-  
-  
- def search
-
-   @rooms = Room.none        # ← まず空Relationで初期化（nil回避）
-
-  area    = params[:area].to_s.strip
-  keyword = params[:keyword].to_s.strip
-
-  query  = []
-  values = []
-
-  if area.present?
-    query  << "(address LIKE ? OR area LIKE ?)"
-    values << "%#{area}%" << "%#{area}%"
-  end
-
-  if keyword.present?
-    query  << "(name LIKE ? OR description LIKE ?)"
-    values << "%#{keyword}%" << "%#{keyword}%"
-  end
-
-  @rooms = Room.where(query.join(' AND '), *values) unless query.empty?
-  @count = @rooms.size
-
-  Rails.logger.debug "PARAMS area=#{area} keyword=#{keyword}"
-  Rails.logger.debug "[DEBUG SQL] #{Room.where(query.join(' AND '), *values).to_sql}" unless query.empty?
-  Rails.logger.debug "DEBUG: @rooms => #{@rooms.inspect}"
-
-  puts "PARAMS: #{params.inspect}"
-  puts "SQL: #{Room.where(query.join(' AND '), *values).to_sql}" unless query.empty?
-  puts "RESULT: #{@rooms.inspect}"
-
-
- if @rooms.blank?
-  Rails.logger.debug "DEBUG: @rooms is EMPTY or NIL"
- else
-  Rails.logger.debug "DEBUG: @rooms has #{@rooms.size} records"
-  Rails.logger.debug "DEBUG: @rooms => #{@rooms.inspect}"
- end
-
-
-
-
-  render :search
- 
- end
-
-
-
 end
-
-
-
-
-
